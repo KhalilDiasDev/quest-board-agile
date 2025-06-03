@@ -10,10 +10,12 @@ export interface Task {
   armorClass: number;
   hitPoints: number;
   currentHp: number;
-  status: 'backlog' | 'todo' | 'inprogress' | 'review' | 'done';
+  status: 'todo' | 'inprogress' | 'done' | 'finish' | 'failed';
   xpReward: number;
   createdAt: Date;
   completedAt?: Date;
+  chances: number; // Chances restantes (máximo 3)
+  maxChances: number; // Sempre 3
 }
 
 export interface Avatar {
@@ -65,7 +67,7 @@ interface GameState {
   spellsUsed: number;
   
   // Actions
-  addTask: (task: Omit<Task, 'id' | 'createdAt'>) => void;
+  addTask: (task: Omit<Task, 'id' | 'createdAt' | 'chances' | 'maxChances'>) => void;
   updateTask: (id: string, updates: Partial<Task>) => void;
   deleteTask: (id: string) => void;
   moveTask: (id: string, newStatus: Task['status']) => void;
@@ -137,7 +139,7 @@ const avatars: Avatar[] = [
   }
 ];
 
-// Tarefas pré-definidas para o repositório de saberes
+// Tarefas pré-definidas com o novo sistema de chances
 const initialTasks: Task[] = [
   {
     id: 'task-1',
@@ -148,9 +150,11 @@ const initialTasks: Task[] = [
     armorClass: 8,
     hitPoints: 3,
     currentHp: 3,
-    status: 'backlog',
+    status: 'todo',
     xpReward: 80,
-    createdAt: new Date()
+    createdAt: new Date(),
+    chances: 3,
+    maxChances: 3
   },
   {
     id: 'task-2',
@@ -161,9 +165,11 @@ const initialTasks: Task[] = [
     armorClass: 12,
     hitPoints: 3,
     currentHp: 3,
-    status: 'backlog',
+    status: 'todo',
     xpReward: 120,
-    createdAt: new Date()
+    createdAt: new Date(),
+    chances: 3,
+    maxChances: 3
   },
   {
     id: 'task-3',
@@ -174,9 +180,11 @@ const initialTasks: Task[] = [
     armorClass: 16,
     hitPoints: 3,
     currentHp: 3,
-    status: 'backlog',
+    status: 'todo',
     xpReward: 180,
-    createdAt: new Date()
+    createdAt: new Date(),
+    chances: 3,
+    maxChances: 3
   },
   {
     id: 'task-4',
@@ -187,9 +195,11 @@ const initialTasks: Task[] = [
     armorClass: 11,
     hitPoints: 3,
     currentHp: 3,
-    status: 'backlog',
+    status: 'todo',
     xpReward: 110,
-    createdAt: new Date()
+    createdAt: new Date(),
+    chances: 3,
+    maxChances: 3
   },
   {
     id: 'task-5',
@@ -200,9 +210,11 @@ const initialTasks: Task[] = [
     armorClass: 18,
     hitPoints: 3,
     currentHp: 3,
-    status: 'backlog',
+    status: 'todo',
     xpReward: 200,
-    createdAt: new Date()
+    createdAt: new Date(),
+    chances: 3,
+    maxChances: 3
   },
   {
     id: 'task-6',
@@ -213,9 +225,11 @@ const initialTasks: Task[] = [
     armorClass: 13,
     hitPoints: 3,
     currentHp: 3,
-    status: 'backlog',
+    status: 'todo',
     xpReward: 140,
-    createdAt: new Date()
+    createdAt: new Date(),
+    chances: 3,
+    maxChances: 3
   },
   {
     id: 'task-7',
@@ -226,9 +240,11 @@ const initialTasks: Task[] = [
     armorClass: 9,
     hitPoints: 3,
     currentHp: 3,
-    status: 'backlog',
+    status: 'todo',
     xpReward: 90,
-    createdAt: new Date()
+    createdAt: new Date(),
+    chances: 3,
+    maxChances: 3
   },
   {
     id: 'task-8',
@@ -239,9 +255,11 @@ const initialTasks: Task[] = [
     armorClass: 12,
     hitPoints: 3,
     currentHp: 3,
-    status: 'backlog',
+    status: 'todo',
     xpReward: 120,
-    createdAt: new Date()
+    createdAt: new Date(),
+    chances: 3,
+    maxChances: 3
   },
   {
     id: 'task-9',
@@ -252,9 +270,11 @@ const initialTasks: Task[] = [
     armorClass: 15,
     hitPoints: 3,
     currentHp: 3,
-    status: 'backlog',
+    status: 'todo',
     xpReward: 170,
-    createdAt: new Date()
+    createdAt: new Date(),
+    chances: 3,
+    maxChances: 3
   },
   {
     id: 'task-10',
@@ -265,9 +285,11 @@ const initialTasks: Task[] = [
     armorClass: 17,
     hitPoints: 3,
     currentHp: 3,
-    status: 'backlog',
+    status: 'todo',
     xpReward: 190,
-    createdAt: new Date()
+    createdAt: new Date(),
+    chances: 3,
+    maxChances: 3
   }
 ];
 
@@ -295,7 +317,9 @@ export const useGameStore = create<GameState>()(
           ...taskData,
           id: crypto.randomUUID(),
           createdAt: new Date(),
-          currentHp: taskData.hitPoints
+          currentHp: taskData.hitPoints,
+          chances: 3,
+          maxChances: 3
         };
         
         set((state) => ({
@@ -328,21 +352,26 @@ export const useGameStore = create<GameState>()(
 
         const updates: Partial<Task> = { status: newStatus };
         
-        if (newStatus === 'done' && task.status !== 'done') {
+        if (newStatus === 'finish' && task.status !== 'finish') {
           updates.completedAt = new Date();
           get().gainXp(task.xpReward);
           
           get().addLog({
             type: 'move',
-            message: `Quest concluída: "${task.name}" (+${task.xpReward} XP)`
+            message: `Quest finalizada: "${task.name}" (+${task.xpReward} XP)`
+          });
+        } else if (newStatus === 'failed') {
+          get().addLog({
+            type: 'move',
+            message: `Quest falhada: "${task.name}" - sem chances restantes`
           });
         } else {
           const statusNames = {
-            backlog: 'Backlog',
-            todo: 'A Fazer',
-            inprogress: 'Em Progresso',
-            review: 'Revisão',
-            done: 'Concluído'
+            todo: 'Taverna',
+            inprogress: 'Missão',
+            done: 'Batalha',
+            finish: 'Vitória',
+            failed: 'Falha'
           };
           
           get().addLog({
@@ -360,13 +389,14 @@ export const useGameStore = create<GameState>()(
             ...task,
             status: 'todo' as const,
             currentHp: task.hitPoints,
-            completedAt: undefined
+            completedAt: undefined,
+            chances: 3
           }))
         }));
         
         get().addLog({
           type: 'move',
-          message: 'Todas as quests foram resetadas para "A Fazer"'
+          message: 'Todas as quests foram resetadas para "Taverna"'
         });
       },
 
@@ -403,32 +433,40 @@ export const useGameStore = create<GameState>()(
           bonusText = ' (Fraqueza: -2)';
         }
         
-        get().addLog({
-          type: 'roll',
-          message: success 
-            ? `Rolou ${roll}, superou CA ${task.armorClass}! Quest "${task.name}" pode ser movida.${bonusText}`
-            : `Rolou ${roll}, falhou contra CA ${task.armorClass}. Quest "${task.name}" resiste!${bonusText}`,
-          diceRoll: roll,
-          success
-        });
-
         if (success) {
-          // Reduzir HP da tarefa
+          // Sucesso - pode mover para próximo status
           const newHp = task.currentHp - 1;
           if (newHp <= 0) {
-            // Tarefa concluída
-            if (newStatus === 'done') {
-              get().moveTask(taskId, newStatus);
-            } else {
-              // Se não está sendo movida para done, apenas move para o próximo status
-              get().moveTask(taskId, newStatus);
-              get().updateTask(taskId, { currentHp: task.hitPoints }); // Reset HP
-            }
+            // Task concluída neste status
+            get().moveTask(taskId, newStatus);
+            get().updateTask(taskId, { currentHp: task.hitPoints }); // Reset HP para próximo status
           } else {
             get().updateTask(taskId, { currentHp: newHp });
             get().addLog({
               type: 'move',
               message: `"${task.name}" recebeu dano! HP restante: ${newHp}/${task.hitPoints}`
+            });
+          }
+          
+          get().addLog({
+            type: 'roll',
+            message: `Rolou ${roll}, superou CA ${task.armorClass}!${bonusText}`,
+            diceRoll: roll,
+            success: true
+          });
+        } else {
+          // Falha - reduz chances
+          const newChances = task.chances - 1;
+          if (newChances <= 0) {
+            // Sem chances restantes - task falha
+            get().moveTask(taskId, 'failed');
+          } else {
+            get().updateTask(taskId, { chances: newChances });
+            get().addLog({
+              type: 'roll',
+              message: `Rolou ${roll}, falhou contra CA ${task.armorClass}. Chances restantes: ${newChances}${bonusText}`,
+              diceRoll: roll,
+              success: false
             });
           }
         }

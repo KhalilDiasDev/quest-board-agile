@@ -17,15 +17,15 @@ interface TaskCardProps {
 export const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete }) => {
   const { attemptMoveTask, character } = useGameStore();
   const [showDiceRoller, setShowDiceRoller] = useState(false);
-  const [targetStatus, setTargetStatus] = useState<Task['status']>('todo');
+  const [targetStatus, setTargetStatus] = useState<Task['status']>('inprogress');
 
   const getNextStatus = (currentStatus: Task['status']): Task['status'] | null => {
     const flow: Record<Task['status'], Task['status'] | null> = {
-      backlog: 'todo',
       todo: 'inprogress',
-      inprogress: 'review',
-      review: 'done',
-      done: null
+      inprogress: 'done',
+      done: 'finish',
+      finish: null,
+      failed: null
     };
     return flow[currentStatus];
   };
@@ -46,25 +46,25 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete }) =>
     const baseStyle = "border-2 transition-all duration-300 hover:shadow-lg";
     
     switch (task.status) {
-      case 'backlog':
-        return `${baseStyle} border-gray-400 bg-gradient-to-br from-gray-50 to-gray-100`;
       case 'todo':
-        return `${baseStyle} border-blue-400 bg-gradient-to-br from-blue-50 to-blue-100`;
+        return `${baseStyle} border-amber-400 bg-gradient-to-br from-amber-50 to-amber-100`;
       case 'inprogress':
-        return `${baseStyle} border-yellow-400 bg-gradient-to-br from-yellow-50 to-yellow-100`;
-      case 'review':
-        return `${baseStyle} border-purple-400 bg-gradient-to-br from-purple-50 to-purple-100`;
+        return `${baseStyle} border-blue-400 bg-gradient-to-br from-blue-50 to-blue-100`;
       case 'done':
+        return `${baseStyle} border-yellow-400 bg-gradient-to-br from-yellow-50 to-yellow-100`;
+      case 'finish':
         return `${baseStyle} border-green-400 bg-gradient-to-br from-green-50 to-green-100`;
+      case 'failed':
+        return `${baseStyle} border-red-400 bg-gradient-to-br from-red-50 to-red-100`;
       default:
         return baseStyle;
     }
   };
 
   const getMonsterIcon = () => {
-    if (task.difficulty === 'hard') return '🐉'; // Dragon
-    if (task.difficulty === 'medium') return '🧟'; // Zombie  
-    return '🐺'; // Wolf
+    if (task.difficulty === 'hard') return '🐉'; // Dragon - Hard
+    if (task.difficulty === 'medium') return '🧟'; // Zombie - Medium
+    return '🐺'; // Wolf - Easy
   };
 
   const getDifficultyColor = () => {
@@ -197,6 +197,23 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete }) =>
               />
             </div>
 
+            {/* Chances Indicator */}
+            {task.status !== 'finish' && task.status !== 'failed' && (
+              <div className="flex items-center justify-center space-x-1">
+                <span className="text-xs font-medium">Chances:</span>
+                {[...Array(task.maxChances)].map((_, index) => (
+                  <div
+                    key={index}
+                    className={`w-3 h-3 rounded-full ${
+                      index < task.chances 
+                        ? 'bg-blue-500' 
+                        : 'bg-gray-300'
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
+
             {/* Avatar Advantage/Disadvantage */}
             {advantage && character.avatar && (
               <div className={`text-xs font-medium ${advantage.color} flex items-center space-x-1`}>
@@ -210,15 +227,15 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete }) =>
             {/* Status Badge and Action */}
             <div className="flex items-center justify-between">
               <Badge variant="outline" className="text-xs">
-                {task.status === 'backlog' && 'Backlog'}
-                {task.status === 'todo' && 'A Fazer'}
-                {task.status === 'inprogress' && 'Em Progresso'}
-                {task.status === 'review' && 'Revisão'}
-                {task.status === 'done' && 'Concluído'}
+                {task.status === 'todo' && 'Taverna'}
+                {task.status === 'inprogress' && 'Missão'}
+                {task.status === 'done' && 'Batalha'}
+                {task.status === 'finish' && 'Vitória'}
+                {task.status === 'failed' && 'Falha'}
               </Badge>
 
               {/* Action Button */}
-              {nextStatus && (
+              {nextStatus && task.chances > 0 && (
                 <Button
                   size="sm"
                   onClick={handleMoveAttempt}

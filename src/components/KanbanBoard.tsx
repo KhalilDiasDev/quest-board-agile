@@ -81,33 +81,33 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ onAddTask }) => {
   const columns = [
     {
       title: 'Taverna',
-      status: 'backlog' as const,
+      status: 'todo' as const,
       icon: '🍺',
       color: 'bg-gradient-to-br from-amber-100 to-amber-200 border-amber-300'
     },
     {
-      title: 'Preparação',
-      status: 'todo' as const,
+      title: 'Missão',
+      status: 'inprogress' as const,
       icon: '⚔️',
       color: 'bg-gradient-to-br from-blue-100 to-blue-200 border-blue-300'
     },
     {
       title: 'Batalha',
-      status: 'inprogress' as const,
+      status: 'done' as const,
       icon: '⚡',
       color: 'bg-gradient-to-br from-yellow-100 to-yellow-200 border-yellow-300'
     },
     {
-      title: 'Verificação',
-      status: 'review' as const,
-      icon: '🔍',
-      color: 'bg-gradient-to-br from-purple-100 to-purple-200 border-purple-300'
-    },
-    {
       title: 'Vitória',
-      status: 'done' as const,
+      status: 'finish' as const,
       icon: '🏆',
       color: 'bg-gradient-to-br from-green-100 to-green-200 border-green-300'
+    },
+    {
+      title: 'Falha',
+      status: 'failed' as const,
+      icon: '💀',
+      color: 'bg-gradient-to-br from-red-100 to-red-200 border-red-300'
     }
   ];
 
@@ -132,7 +132,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({ onAddTask }) => {
               tasks={getTasksForStatus(column.status)}
               icon={column.icon}
               color={column.color}
-              onAddTask={column.status === 'backlog' ? onAddTask : undefined}
+              onAddTask={column.status === 'todo' ? onAddTask : undefined}
             />
           </motion.div>
         ))}
