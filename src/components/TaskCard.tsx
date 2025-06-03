@@ -23,7 +23,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete }) =>
     const flow: Record<Task['status'], Task['status'] | null> = {
       backlog: 'todo',
       todo: 'inprogress',
-      inprogress: 'done',
+      inprogress: 'review',
+      review: 'done',
       done: null
     };
     return flow[currentStatus];
@@ -51,6 +52,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete }) =>
         return `${baseStyle} border-blue-400 bg-gradient-to-br from-blue-50 to-blue-100`;
       case 'inprogress':
         return `${baseStyle} border-yellow-400 bg-gradient-to-br from-yellow-50 to-yellow-100`;
+      case 'review':
+        return `${baseStyle} border-purple-400 bg-gradient-to-br from-purple-50 to-purple-100`;
       case 'done':
         return `${baseStyle} border-green-400 bg-gradient-to-br from-green-50 to-green-100`;
       default:
@@ -208,6 +211,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete }) =>
                 {task.status === 'backlog' && 'Backlog'}
                 {task.status === 'todo' && 'A Fazer'}
                 {task.status === 'inprogress' && 'Em Progresso'}
+                {task.status === 'review' && 'Revisão'}
                 {task.status === 'done' && 'Concluído'}
               </Badge>
 

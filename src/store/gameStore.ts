@@ -11,7 +11,7 @@ export interface Task {
   armorClass: number;
   hitPoints: number;
   currentHp: number;
-  status: 'backlog' | 'todo' | 'inprogress' | 'done';
+  status: 'backlog' | 'todo' | 'inprogress' | 'review' | 'done';
   xpReward: number;
   createdAt: Date;
   completedAt?: Date;

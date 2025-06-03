@@ -7,7 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Slider } from '@/components/ui/slider';
-import { useGameStore } from '@/store/gameStore';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useGameStore, Task } from '@/store/gameStore';
 
 interface TaskFormProps {
   isOpen: boolean;
@@ -20,8 +21,9 @@ export const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose }) => {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
+    category: 'technical' as Task['category'],
     armorClass: [10],
-    hitPoints: [1],
+    hitPoints: [3],
     xpReward: [50]
   });
 
@@ -30,9 +32,18 @@ export const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose }) => {
     
     if (!formData.name.trim()) return;
     
+    // Calculate difficulty based on armor class
+    const getDifficulty = (ac: number): Task['difficulty'] => {
+      if (ac >= 15) return 'hard';
+      if (ac >= 12) return 'medium';
+      return 'easy';
+    };
+    
     addTask({
       name: formData.name,
       description: formData.description,
+      category: formData.category,
+      difficulty: getDifficulty(formData.armorClass[0]),
       armorClass: formData.armorClass[0],
       hitPoints: formData.hitPoints[0],
       currentHp: formData.hitPoints[0],
@@ -44,8 +55,9 @@ export const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose }) => {
     setFormData({
       name: '',
       description: '',
+      category: 'technical',
       armorClass: [10],
-      hitPoints: [1],
+      hitPoints: [3],
       xpReward: [50]
     });
     
@@ -110,6 +122,28 @@ export const TaskForm: React.FC<TaskFormProps> = ({ isOpen, onClose }) => {
               rows={3}
               className="border-amber-300 focus:ring-amber-500"
             />
+          </div>
+
+          {/* Category */}
+          <div className="space-y-2">
+            <Label className="text-amber-800 font-semibold">
+              Categoria
+            </Label>
+            <Select
+              value={formData.category}
+              onValueChange={(value) => setFormData({ ...formData, category: value as Task['category'] })}
+            >
+              <SelectTrigger className="border-amber-300 focus:ring-amber-500">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="technical">💻 Técnico</SelectItem>
+                <SelectItem value="business">📊 Negócio</SelectItem>
+                <SelectItem value="design">🎨 Design</SelectItem>
+                <SelectItem value="testing">🧪 Testes</SelectItem>
+                <SelectItem value="documentation">📝 Documentação</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Armor Class */}
