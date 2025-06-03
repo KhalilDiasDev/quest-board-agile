@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Sword, Shield, Heart, Star, Trash2, Edit, ArrowRight } from 'lucide-react';
+import { Sword, Shield, Heart, Star, Trash2, Edit, ArrowRight, Tag } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,7 +15,7 @@ interface TaskCardProps {
 }
 
 export const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete }) => {
-  const { attemptMoveTask } = useGameStore();
+  const { attemptMoveTask, character } = useGameStore();
   const [showDiceRoller, setShowDiceRoller] = useState(false);
   const [targetStatus, setTargetStatus] = useState<Task['status']>('todo');
 
@@ -23,8 +23,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete }) =>
     const flow: Record<Task['status'], Task['status'] | null> = {
       backlog: 'todo',
       todo: 'inprogress',
-      inprogress: 'review',
-      review: 'done',
+      inprogress: 'done',
       done: null
     };
     return flow[currentStatus];
@@ -52,8 +51,6 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete }) =>
         return `${baseStyle} border-blue-400 bg-gradient-to-br from-blue-50 to-blue-100`;
       case 'inprogress':
         return `${baseStyle} border-yellow-400 bg-gradient-to-br from-yellow-50 to-yellow-100`;
-      case 'review':
-        return `${baseStyle} border-purple-400 bg-gradient-to-br from-purple-50 to-purple-100`;
       case 'done':
         return `${baseStyle} border-green-400 bg-gradient-to-br from-green-50 to-green-100`;
       default:
@@ -62,22 +59,52 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete }) =>
   };
 
   const getMonsterIcon = () => {
-    if (task.armorClass >= 18) return '🐉'; // Dragon
-    if (task.armorClass >= 15) return '👹'; // Demon
-    if (task.armorClass >= 12) return '🧟'; // Zombie
-    if (task.armorClass >= 8) return '🐺'; // Wolf
-    return '🐀'; // Rat
+    if (task.difficulty === 'hard') return '🐉'; // Dragon
+    if (task.difficulty === 'medium') return '🧟'; // Zombie  
+    return '🐺'; // Wolf
   };
 
   const getDifficultyColor = () => {
-    if (task.armorClass >= 18) return 'text-red-600';
-    if (task.armorClass >= 15) return 'text-orange-600';
-    if (task.armorClass >= 12) return 'text-yellow-600';
-    if (task.armorClass >= 8) return 'text-green-600';
-    return 'text-gray-600';
+    if (task.difficulty === 'hard') return 'text-red-600';
+    if (task.difficulty === 'medium') return 'text-yellow-600';
+    return 'text-green-600';
+  };
+
+  const getCategoryIcon = () => {
+    const icons = {
+      technical: '💻',
+      business: '📊', 
+      design: '🎨',
+      testing: '🧪',
+      documentation: '📝'
+    };
+    return icons[task.category] || '📋';
+  };
+
+  const getCategoryColor = () => {
+    const colors = {
+      technical: 'bg-blue-100 text-blue-800',
+      business: 'bg-green-100 text-green-800',
+      design: 'bg-purple-100 text-purple-800', 
+      testing: 'bg-orange-100 text-orange-800',
+      documentation: 'bg-gray-100 text-gray-800'
+    };
+    return colors[task.category] || 'bg-gray-100 text-gray-800';
+  };
+
+  const getAvatarAdvantage = () => {
+    const { avatar } = character;
+    if (avatar.specialties.includes(task.category)) {
+      return { type: 'advantage', bonus: '+3', color: 'text-green-600' };
+    }
+    if (avatar.weaknesses.includes(task.category)) {
+      return { type: 'disadvantage', bonus: '-2', color: 'text-red-600' };
+    }
+    return null;
   };
 
   const nextStatus = getNextStatus(task.status);
+  const advantage = getAvatarAdvantage();
 
   return (
     <>
@@ -95,7 +122,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete }) =>
             <div className="flex items-start justify-between">
               <div className="flex items-center space-x-2">
                 <span className="text-2xl">{getMonsterIcon()}</span>
-                <div>
+                <div className="flex-1">
                   <h3 className="font-bold text-sm line-clamp-2">{task.name}</h3>
                   {task.description && (
                     <p className="text-xs text-gray-600 line-clamp-1">{task.description}</p>
@@ -127,6 +154,16 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete }) =>
               </div>
             </div>
 
+            {/* Category and Difficulty */}
+            <div className="flex items-center justify-between">
+              <Badge className={`text-xs ${getCategoryColor()}`}>
+                {getCategoryIcon()} {task.category}
+              </Badge>
+              <Badge variant="outline" className={`text-xs ${getDifficultyColor()}`}>
+                {task.difficulty}
+              </Badge>
+            </div>
+
             {/* Stats */}
             <div className="grid grid-cols-3 gap-2 text-xs">
               <div className="flex items-center space-x-1">
@@ -155,13 +192,22 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete }) =>
               />
             </div>
 
-            {/* Status Badge */}
+            {/* Avatar Advantage/Disadvantage */}
+            {advantage && (
+              <div className={`text-xs font-medium ${advantage.color} flex items-center space-x-1`}>
+                <span>{character.avatar.icon}</span>
+                <span>
+                  {advantage.type === 'advantage' ? 'Vantagem' : 'Desvantagem'}: {advantage.bonus}
+                </span>
+              </div>
+            )}
+
+            {/* Status Badge and Action */}
             <div className="flex items-center justify-between">
               <Badge variant="outline" className="text-xs">
                 {task.status === 'backlog' && 'Backlog'}
                 {task.status === 'todo' && 'A Fazer'}
                 {task.status === 'inprogress' && 'Em Progresso'}
-                {task.status === 'review' && 'Revisão'}
                 {task.status === 'done' && 'Concluído'}
               </Badge>
 
@@ -188,6 +234,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete }) =>
         onRoll={handleDiceRoll}
         targetAC={task.armorClass}
         taskName={task.name}
+        taskCategory={task.category}
       />
     </>
   );

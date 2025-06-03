@@ -1,54 +1,114 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Sword, Shield, Sparkles, TrendingUp, Star } from 'lucide-react';
+import { Sword, Shield, Sparkles, TrendingUp, Star, Settings } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
+import { Button } from '@/components/ui/button';
 import { useGameStore } from '@/store/gameStore';
 
 export const CharacterSheet: React.FC = () => {
-  const { character, spellsUsed } = useGameStore();
+  const { character, spellsUsed, availableAvatars, changeAvatar } = useGameStore();
+  const [showAvatarSelector, setShowAvatarSelector] = useState(false);
 
-  const classInfo = {
-    warrior: {
-      name: 'Guerreiro',
-      icon: <Sword className="text-red-600" size={24} />,
-      color: 'from-red-100 to-red-200',
-      border: 'border-red-300',
-      description: '+2 em todas as rolagens'
-    },
-    mage: {
-      name: 'Mago',
-      icon: <Sparkles className="text-purple-600" size={24} />,
-      color: 'from-purple-100 to-purple-200',
-      border: 'border-purple-300',
-      description: '+1 nas rolagens + 3 magias por sprint'
-    },
-    rogue: {
-      name: 'Ladino',
-      icon: <Shield className="text-green-600" size={24} />,
-      color: 'from-green-100 to-green-200',
-      border: 'border-green-300',
-      description: '+1 nas rolagens + habilidades especiais'
-    }
+  const getAvatarColor = () => {
+    const colors = {
+      developer: 'from-blue-100 to-blue-200 border-blue-300',
+      analyst: 'from-green-100 to-green-200 border-green-300',
+      designer: 'from-purple-100 to-purple-200 border-purple-300',
+      tester: 'from-orange-100 to-orange-200 border-orange-300',
+      fullstack: 'from-gray-100 to-gray-200 border-gray-300'
+    };
+    return colors[character.avatar.id] || 'from-gray-100 to-gray-200 border-gray-300';
   };
 
-  const currentClass = classInfo[character.class];
   const xpProgress = (character.xp / character.xpToNext) * 100;
 
   return (
-    <Card className={`bg-gradient-to-br ${currentClass.color} ${currentClass.border} border-2`}>
+    <Card className={`bg-gradient-to-br ${getAvatarColor()} border-2`}>
       <div className="p-6 space-y-4">
         {/* Header */}
-        <div className="flex items-center space-x-3">
-          {currentClass.icon}
-          <div>
-            <h2 className="text-xl font-bold">{character.name}</h2>
-            <Badge variant="outline" className="text-xs">
-              {currentClass.name} Nível {character.level}
-            </Badge>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <span className="text-3xl">{character.avatar.icon}</span>
+            <div>
+              <h2 className="text-xl font-bold">{character.name}</h2>
+              <Badge variant="outline" className="text-xs">
+                {character.avatar.name} Nível {character.level}
+              </Badge>
+            </div>
           </div>
+          
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setShowAvatarSelector(!showAvatarSelector)}
+            className="h-8 w-8 p-0"
+          >
+            <Settings size={16} />
+          </Button>
+        </div>
+
+        {/* Avatar Description */}
+        <p className="text-sm text-gray-700">{character.avatar.description}</p>
+
+        {/* Avatar Selector */}
+        {showAvatarSelector && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="space-y-2"
+          >
+            <p className="text-sm font-medium">Escolher Avatar:</p>
+            <div className="grid grid-cols-2 gap-2">
+              {availableAvatars.map((avatar) => (
+                <Button
+                  key={avatar.id}
+                  size="sm"
+                  variant={character.avatar.id === avatar.id ? "default" : "outline"}
+                  onClick={() => {
+                    changeAvatar(avatar.id);
+                    setShowAvatarSelector(false);
+                  }}
+                  className="h-12 flex flex-col items-center justify-center text-xs"
+                >
+                  <span className="text-lg">{avatar.icon}</span>
+                  <span>{avatar.name}</span>
+                </Button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {/* Specialties and Weaknesses */}
+        <div className="space-y-2">
+          {character.avatar.specialties.length > 0 && (
+            <div>
+              <p className="text-sm font-medium text-green-700">Especialidades (+3):</p>
+              <div className="flex flex-wrap gap-1">
+                {character.avatar.specialties.map((specialty) => (
+                  <Badge key={specialty} className="text-xs bg-green-100 text-green-800">
+                    {specialty}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {character.avatar.weaknesses.length > 0 && (
+            <div>
+              <p className="text-sm font-medium text-red-700">Fraquezas (-2):</p>
+              <div className="flex flex-wrap gap-1">
+                {character.avatar.weaknesses.map((weakness) => (
+                  <Badge key={weakness} className="text-xs bg-red-100 text-red-800">
+                    {weakness}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* XP Progress */}
@@ -79,14 +139,8 @@ export const CharacterSheet: React.FC = () => {
           )}
         </div>
 
-        {/* Class Description */}
-        <div className="text-sm text-gray-700">
-          <p className="font-medium">Habilidade de Classe:</p>
-          <p>{currentClass.description}</p>
-        </div>
-
         {/* Mage Spells Counter */}
-        {character.class === 'mage' && (
+        {character.avatar.id === 'mage' && (
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
               <span className="flex items-center space-x-1">

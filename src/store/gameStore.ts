@@ -6,18 +6,30 @@ export interface Task {
   id: string;
   name: string;
   description: string;
+  category: 'technical' | 'business' | 'design' | 'testing' | 'documentation';
+  difficulty: 'easy' | 'medium' | 'hard';
   armorClass: number;
   hitPoints: number;
   currentHp: number;
-  status: 'backlog' | 'todo' | 'inprogress' | 'review' | 'done';
+  status: 'backlog' | 'todo' | 'inprogress' | 'done';
   xpReward: number;
   createdAt: Date;
   completedAt?: Date;
 }
 
+export interface Avatar {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  specialties: Task['category'][];
+  weaknesses: Task['category'][];
+  baseBonus: number;
+}
+
 export interface Character {
   name: string;
-  class: 'warrior' | 'mage' | 'rogue';
+  avatar: Avatar;
   level: number;
   xp: number;
   xpToNext: number;
@@ -46,6 +58,7 @@ export interface ActionLog {
 interface GameState {
   tasks: Task[];
   character: Character;
+  availableAvatars: Avatar[];
   sprints: Sprint[];
   currentSprint: Sprint | null;
   actionLog: ActionLog[];
@@ -58,7 +71,7 @@ interface GameState {
   deleteTask: (id: string) => void;
   moveTask: (id: string, newStatus: Task['status']) => void;
   
-  rollDice: () => number;
+  rollDice: (taskCategory: Task['category']) => number;
   attemptMoveTask: (taskId: string, newStatus: Task['status']) => boolean;
   
   gainXp: (amount: number) => void;
@@ -70,27 +83,59 @@ interface GameState {
   addLog: (log: Omit<ActionLog, 'id' | 'timestamp'>) => void;
   
   setDiceType: (type: number) => void;
+  changeAvatar: (avatarId: string) => void;
   useSpell: () => boolean;
   resetSpellsForSprint: () => void;
 }
 
-const characterClasses = {
-  warrior: {
-    name: 'Guerreiro',
-    bonus: 2,
-    abilities: ['Força Bruta', 'Resistência', 'Liderança']
+// Avatares disponíveis
+const avatars: Avatar[] = [
+  {
+    id: 'developer',
+    name: 'Desenvolvedor',
+    description: 'Especialista em programação e arquitetura de sistemas',
+    icon: '👨‍💻',
+    specialties: ['technical'],
+    weaknesses: ['business', 'design'],
+    baseBonus: 1
   },
-  mage: {
-    name: 'Mago',
-    bonus: 1,
-    abilities: ['Reroll Spell', 'Sabedoria Arcana', 'Concentração']
+  {
+    id: 'analyst',
+    name: 'Analista de Negócios',
+    description: 'Expert em levantamento de requisitos e processos',
+    icon: '📊',
+    specialties: ['business', 'documentation'],
+    weaknesses: ['technical'],
+    baseBonus: 1
   },
-  rogue: {
-    name: 'Ladino',
-    bonus: 1,
-    abilities: ['Sorte', 'Agilidade', 'Precisão']
+  {
+    id: 'designer',
+    name: 'Designer UX/UI',
+    description: 'Focado em experiência do usuário e interfaces',
+    icon: '🎨',
+    specialties: ['design'],
+    weaknesses: ['technical', 'testing'],
+    baseBonus: 1
+  },
+  {
+    id: 'tester',
+    name: 'Analista de Testes',
+    description: 'Especialista em qualidade e testes automatizados',
+    icon: '🧪',
+    specialties: ['testing'],
+    weaknesses: ['design', 'business'],
+    baseBonus: 1
+  },
+  {
+    id: 'fullstack',
+    name: 'Generalista',
+    description: 'Conhecimento amplo mas sem especializações',
+    icon: '⚖️',
+    specialties: [],
+    weaknesses: [],
+    baseBonus: 2
   }
-};
+];
 
 // Tarefas pré-definidas para o repositório de saberes
 const initialTasks: Task[] = [
@@ -98,9 +143,11 @@ const initialTasks: Task[] = [
     id: 'task-1',
     name: 'Levantamento de Requisitos',
     description: 'Definir funcionalidades e escopo do repositório de saberes',
+    category: 'business',
+    difficulty: 'easy',
     armorClass: 8,
-    hitPoints: 2,
-    currentHp: 2,
+    hitPoints: 3,
+    currentHp: 3,
     status: 'backlog',
     xpReward: 80,
     createdAt: new Date()
@@ -109,6 +156,8 @@ const initialTasks: Task[] = [
     id: 'task-2',
     name: 'Modelagem do Banco de Dados',
     description: 'Criar diagrama ER e estrutura das tabelas para armazenar conhecimentos',
+    category: 'technical',
+    difficulty: 'medium',
     armorClass: 12,
     hitPoints: 3,
     currentHp: 3,
@@ -120,53 +169,63 @@ const initialTasks: Task[] = [
     id: 'task-3',
     name: 'Implementar Sistema de Autenticação',
     description: 'Desenvolver login/logout e controle de acesso de usuários',
-    armorClass: 15,
-    hitPoints: 4,
-    currentHp: 4,
+    category: 'technical',
+    difficulty: 'hard',
+    armorClass: 16,
+    hitPoints: 3,
+    currentHp: 3,
     status: 'backlog',
-    xpReward: 150,
+    xpReward: 180,
     createdAt: new Date()
   },
   {
     id: 'task-4',
     name: 'Criar Interface de Upload',
     description: 'Tela para upload de documentos, vídeos e materiais de conhecimento',
-    armorClass: 10,
-    hitPoints: 2,
-    currentHp: 2,
+    category: 'design',
+    difficulty: 'medium',
+    armorClass: 11,
+    hitPoints: 3,
+    currentHp: 3,
     status: 'backlog',
-    xpReward: 100,
+    xpReward: 110,
     createdAt: new Date()
   },
   {
     id: 'task-5',
     name: 'Sistema de Busca e Filtros',
     description: 'Implementar busca textual e filtros por categoria, autor, data',
-    armorClass: 16,
-    hitPoints: 5,
-    currentHp: 5,
+    category: 'technical',
+    difficulty: 'hard',
+    armorClass: 18,
+    hitPoints: 3,
+    currentHp: 3,
     status: 'backlog',
-    xpReward: 180,
+    xpReward: 200,
     createdAt: new Date()
   },
   {
     id: 'task-6',
     name: 'Dashboard de Administração',
     description: 'Painel para gestão de conteúdos, usuários e estatísticas',
+    category: 'design',
+    difficulty: 'medium',
     armorClass: 13,
     hitPoints: 3,
     currentHp: 3,
     status: 'backlog',
-    xpReward: 130,
+    xpReward: 140,
     createdAt: new Date()
   },
   {
     id: 'task-7',
     name: 'Sistema de Comentários',
     description: 'Permitir comentários e discussões nos materiais compartilhados',
+    category: 'technical',
+    difficulty: 'easy',
     armorClass: 9,
-    hitPoints: 2,
-    currentHp: 2,
+    hitPoints: 3,
+    currentHp: 3,
     status: 'backlog',
     xpReward: 90,
     createdAt: new Date()
@@ -175,33 +234,39 @@ const initialTasks: Task[] = [
     id: 'task-8',
     name: 'Implementar Tags e Categorização',
     description: 'Sistema de tags para organizar e categorizar o conhecimento',
-    armorClass: 11,
-    hitPoints: 2,
-    currentHp: 2,
+    category: 'business',
+    difficulty: 'medium',
+    armorClass: 12,
+    hitPoints: 3,
+    currentHp: 3,
     status: 'backlog',
-    xpReward: 110,
+    xpReward: 120,
     createdAt: new Date()
   },
   {
     id: 'task-9',
     name: 'API RESTful',
     description: 'Desenvolver endpoints para integração com outras aplicações',
-    armorClass: 14,
-    hitPoints: 4,
-    currentHp: 4,
+    category: 'technical',
+    difficulty: 'hard',
+    armorClass: 15,
+    hitPoints: 3,
+    currentHp: 3,
     status: 'backlog',
-    xpReward: 160,
+    xpReward: 170,
     createdAt: new Date()
   },
   {
     id: 'task-10',
     name: 'Testes Automatizados',
     description: 'Criar suite de testes unitários e de integração',
+    category: 'testing',
+    difficulty: 'hard',
     armorClass: 17,
     hitPoints: 3,
     currentHp: 3,
     status: 'backlog',
-    xpReward: 170,
+    xpReward: 190,
     createdAt: new Date()
   }
 ];
@@ -212,12 +277,13 @@ export const useGameStore = create<GameState>()(
       tasks: initialTasks,
       character: {
         name: 'Aventureiro',
-        class: 'warrior',
+        avatar: avatars[0],
         level: 1,
         xp: 0,
         xpToNext: 100,
-        abilities: [characterClasses.warrior.abilities[0]]
+        abilities: ['Iniciante']
       },
+      availableAvatars: avatars,
       sprints: [],
       currentSprint: null,
       actionLog: [],
@@ -275,7 +341,6 @@ export const useGameStore = create<GameState>()(
             backlog: 'Backlog',
             todo: 'A Fazer',
             inprogress: 'Em Progresso',
-            review: 'Revisão',
             done: 'Concluído'
           };
           
@@ -288,44 +353,66 @@ export const useGameStore = create<GameState>()(
         get().updateTask(id, updates);
       },
 
-      rollDice: () => {
+      rollDice: (taskCategory) => {
         const { diceType, character } = get();
         const baseRoll = Math.floor(Math.random() * diceType) + 1;
-        const classBonus = characterClasses[character.class].bonus;
-        return baseRoll + classBonus;
+        let totalBonus = character.avatar.baseBonus;
+
+        // Aplicar bônus por especialidade
+        if (character.avatar.specialties.includes(taskCategory)) {
+          totalBonus += 3; // +3 para especialidades
+        }
+
+        // Aplicar penalidade por fraqueza
+        if (character.avatar.weaknesses.includes(taskCategory)) {
+          totalBonus -= 2; // -2 para fraquezas
+        }
+
+        return baseRoll + totalBonus;
       },
 
       attemptMoveTask: (taskId, newStatus) => {
         const task = get().tasks.find(t => t.id === taskId);
         if (!task) return false;
 
-        const roll = get().rollDice();
+        const roll = get().rollDice(task.category);
         const success = roll >= task.armorClass;
+        
+        const { character } = get();
+        let bonusText = '';
+        if (character.avatar.specialties.includes(task.category)) {
+          bonusText = ' (Especialidade: +3)';
+        } else if (character.avatar.weaknesses.includes(task.category)) {
+          bonusText = ' (Fraqueza: -2)';
+        }
         
         get().addLog({
           type: 'roll',
           message: success 
-            ? `Rolou ${roll}, superou CA ${task.armorClass}! Quest "${task.name}" pode ser movida.`
-            : `Rolou ${roll}, falhou contra CA ${task.armorClass}. Quest "${task.name}" resiste!`,
+            ? `Rolou ${roll}, superou CA ${task.armorClass}! Quest "${task.name}" pode ser movida.${bonusText}`
+            : `Rolou ${roll}, falhou contra CA ${task.armorClass}. Quest "${task.name}" resiste!${bonusText}`,
           diceRoll: roll,
           success
         });
 
         if (success) {
-          if (newStatus === 'done') {
-            // Se a tarefa está sendo concluída, reduzir HP
-            const newHp = task.currentHp - 1;
-            if (newHp <= 0) {
+          // Reduzir HP da tarefa
+          const newHp = task.currentHp - 1;
+          if (newHp <= 0) {
+            // Tarefa concluída
+            if (newStatus === 'done') {
               get().moveTask(taskId, newStatus);
             } else {
-              get().updateTask(taskId, { currentHp: newHp });
-              get().addLog({
-                type: 'move',
-                message: `"${task.name}" recebeu dano! HP restante: ${newHp}/${task.hitPoints}`
-              });
+              // Se não está sendo movida para done, apenas move para o próximo status
+              get().moveTask(taskId, newStatus);
+              get().updateTask(taskId, { currentHp: task.hitPoints }); // Reset HP
             }
           } else {
-            get().moveTask(taskId, newStatus);
+            get().updateTask(taskId, { currentHp: newHp });
+            get().addLog({
+              type: 'move',
+              message: `"${task.name}" recebeu dano! HP restante: ${newHp}/${task.hitPoints}`
+            });
           }
         }
 
@@ -359,7 +446,6 @@ export const useGameStore = create<GameState>()(
 
       levelUp: () => {
         const { character } = get();
-        const classData = characterClasses[character.class];
         
         get().addLog({
           type: 'levelup',
@@ -402,9 +488,26 @@ export const useGameStore = create<GameState>()(
         set({ diceType: type });
       },
 
+      changeAvatar: (avatarId) => {
+        const avatar = get().availableAvatars.find(a => a.id === avatarId);
+        if (avatar) {
+          set((state) => ({
+            character: {
+              ...state.character,
+              avatar
+            }
+          }));
+          
+          get().addLog({
+            type: 'move',
+            message: `Avatar alterado para ${avatar.name}: ${avatar.description}`
+          });
+        }
+      },
+
       useSpell: () => {
         const { character, spellsUsed } = get();
-        if (character.class === 'mage' && spellsUsed < 3) {
+        if (character.avatar.id === 'mage' && spellsUsed < 3) {
           set((state) => ({
             spellsUsed: state.spellsUsed + 1
           }));
