@@ -20,10 +20,21 @@ export const CharacterSheet: React.FC = () => {
       tester: 'from-orange-100 to-orange-200 border-orange-300',
       fullstack: 'from-gray-100 to-gray-200 border-gray-300'
     };
-    return colors[character.avatar.id] || 'from-gray-100 to-gray-200 border-gray-300';
+    return colors[character.avatar?.id as keyof typeof colors] || 'from-gray-100 to-gray-200 border-gray-300';
   };
 
   const xpProgress = (character.xp / character.xpToNext) * 100;
+
+  // Add defensive checks for avatar
+  if (!character.avatar) {
+    return (
+      <Card className="bg-gradient-to-br from-gray-100 to-gray-200 border-gray-300 border-2">
+        <div className="p-6">
+          <p className="text-center text-gray-600">Carregando personagem...</p>
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <Card className={`bg-gradient-to-br ${getAvatarColor()} border-2`}>
@@ -84,7 +95,7 @@ export const CharacterSheet: React.FC = () => {
 
         {/* Specialties and Weaknesses */}
         <div className="space-y-2">
-          {character.avatar.specialties.length > 0 && (
+          {character.avatar.specialties?.length > 0 && (
             <div>
               <p className="text-sm font-medium text-green-700">Especialidades (+3):</p>
               <div className="flex flex-wrap gap-1">
@@ -97,7 +108,7 @@ export const CharacterSheet: React.FC = () => {
             </div>
           )}
           
-          {character.avatar.weaknesses.length > 0 && (
+          {character.avatar.weaknesses?.length > 0 && (
             <div>
               <p className="text-sm font-medium text-red-700">Fraquezas (-2):</p>
               <div className="flex flex-wrap gap-1">

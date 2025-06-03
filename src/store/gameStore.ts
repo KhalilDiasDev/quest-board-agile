@@ -277,7 +277,7 @@ export const useGameStore = create<GameState>()(
       tasks: initialTasks,
       character: {
         name: 'Aventureiro',
-        avatar: avatars[0],
+        avatar: avatars[0], // This should now be properly defined
         level: 1,
         xp: 0,
         xpToNext: 100,
@@ -341,6 +341,7 @@ export const useGameStore = create<GameState>()(
             backlog: 'Backlog',
             todo: 'A Fazer',
             inprogress: 'Em Progresso',
+            review: 'Revisão',
             done: 'Concluído'
           };
           
@@ -356,15 +357,15 @@ export const useGameStore = create<GameState>()(
       rollDice: (taskCategory) => {
         const { diceType, character } = get();
         const baseRoll = Math.floor(Math.random() * diceType) + 1;
-        let totalBonus = character.avatar.baseBonus;
+        let totalBonus = character.avatar?.baseBonus || 0;
 
         // Aplicar bônus por especialidade
-        if (character.avatar.specialties.includes(taskCategory)) {
+        if (character.avatar?.specialties?.includes(taskCategory)) {
           totalBonus += 3; // +3 para especialidades
         }
 
         // Aplicar penalidade por fraqueza
-        if (character.avatar.weaknesses.includes(taskCategory)) {
+        if (character.avatar?.weaknesses?.includes(taskCategory)) {
           totalBonus -= 2; // -2 para fraquezas
         }
 
@@ -380,9 +381,9 @@ export const useGameStore = create<GameState>()(
         
         const { character } = get();
         let bonusText = '';
-        if (character.avatar.specialties.includes(task.category)) {
+        if (character.avatar?.specialties?.includes(task.category)) {
           bonusText = ' (Especialidade: +3)';
-        } else if (character.avatar.weaknesses.includes(task.category)) {
+        } else if (character.avatar?.weaknesses?.includes(task.category)) {
           bonusText = ' (Fraqueza: -2)';
         }
         
@@ -507,7 +508,7 @@ export const useGameStore = create<GameState>()(
 
       useSpell: () => {
         const { character, spellsUsed } = get();
-        if (character.avatar.id === 'mage' && spellsUsed < 3) {
+        if (character.avatar?.id === 'mage' && spellsUsed < 3) {
           set((state) => ({
             spellsUsed: state.spellsUsed + 1
           }));

@@ -97,10 +97,12 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete }) =>
 
   const getAvatarAdvantage = () => {
     const { avatar } = character;
-    if (avatar.specialties.includes(task.category)) {
+    if (!avatar) return null; // Add defensive check
+    
+    if (avatar.specialties?.includes(task.category)) {
       return { type: 'advantage', bonus: '+3', color: 'text-green-600' };
     }
-    if (avatar.weaknesses.includes(task.category)) {
+    if (avatar.weaknesses?.includes(task.category)) {
       return { type: 'disadvantage', bonus: '-2', color: 'text-red-600' };
     }
     return null;
@@ -196,7 +198,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete }) =>
             </div>
 
             {/* Avatar Advantage/Disadvantage */}
-            {advantage && (
+            {advantage && character.avatar && (
               <div className={`text-xs font-medium ${advantage.color} flex items-center space-x-1`}>
                 <span>{character.avatar.icon}</span>
                 <span>
