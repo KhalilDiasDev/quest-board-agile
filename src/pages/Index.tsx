@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Sword, Settings, BookOpen, Plus, Dice6 } from 'lucide-react';
+import { Sword, Settings, BookOpen, Plus, Dice6, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { KanbanBoard } from '@/components/KanbanBoard';
@@ -11,7 +11,7 @@ import { TaskForm } from '@/components/TaskForm';
 import { useGameStore } from '@/store/gameStore';
 
 const Index = () => {
-  const { character, tasks, diceType, setDiceType } = useGameStore();
+  const { character, tasks, diceType, setDiceType, resetAllTasks } = useGameStore();
   const [showTaskForm, setShowTaskForm] = useState(false);
 
   const totalTasks = tasks.length;
@@ -54,6 +54,14 @@ const Index = () => {
                   <option value={6} className="text-gray-800">D6</option>
                 </select>
               </div>
+
+              <Button
+                onClick={resetAllTasks}
+                className="bg-red-600 hover:bg-red-700 text-white"
+              >
+                <RotateCcw size={16} className="mr-2" />
+                Reset Tasks
+              </Button>
 
               <Button
                 onClick={() => setShowTaskForm(true)}

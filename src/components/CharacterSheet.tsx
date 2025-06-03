@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Sword, Shield, Sparkles, TrendingUp, Star, Settings } from 'lucide-react';
+import { Sword, Shield, Sparkles, TrendingUp, Star, Settings, Users } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
@@ -30,7 +30,20 @@ export const CharacterSheet: React.FC = () => {
     return (
       <Card className="bg-gradient-to-br from-gray-100 to-gray-200 border-gray-300 border-2">
         <div className="p-6">
-          <p className="text-center text-gray-600">Carregando personagem...</p>
+          <p className="text-center text-gray-600 mb-4">Escolha seu Avatar</p>
+          <div className="grid grid-cols-2 gap-2">
+            {availableAvatars.map((avatar) => (
+              <Button
+                key={avatar.id}
+                size="sm"
+                onClick={() => changeAvatar(avatar.id)}
+                className="h-16 flex flex-col items-center justify-center text-xs"
+              >
+                <span className="text-xl mb-1">{avatar.icon}</span>
+                <span>{avatar.name}</span>
+              </Button>
+            ))}
+          </div>
         </div>
       </Card>
     );
@@ -57,12 +70,9 @@ export const CharacterSheet: React.FC = () => {
             onClick={() => setShowAvatarSelector(!showAvatarSelector)}
             className="h-8 w-8 p-0"
           >
-            <Settings size={16} />
+            <Users size={16} />
           </Button>
         </div>
-
-        {/* Avatar Description */}
-        <p className="text-sm text-gray-700">{character.avatar.description}</p>
 
         {/* Avatar Selector */}
         {showAvatarSelector && (
@@ -78,7 +88,7 @@ export const CharacterSheet: React.FC = () => {
                 <Button
                   key={avatar.id}
                   size="sm"
-                  variant={character.avatar.id === avatar.id ? "default" : "outline"}
+                  variant={character.avatar?.id === avatar.id ? "default" : "outline"}
                   onClick={() => {
                     changeAvatar(avatar.id);
                     setShowAvatarSelector(false);
@@ -151,7 +161,7 @@ export const CharacterSheet: React.FC = () => {
         </div>
 
         {/* Mage Spells Counter */}
-        {character.avatar.id === 'mage' && (
+        {character.avatar?.id === 'mage' && (
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
               <span className="flex items-center space-x-1">

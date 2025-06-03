@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
@@ -70,6 +69,7 @@ interface GameState {
   updateTask: (id: string, updates: Partial<Task>) => void;
   deleteTask: (id: string) => void;
   moveTask: (id: string, newStatus: Task['status']) => void;
+  resetAllTasks: () => void;
   
   rollDice: (taskCategory: Task['category']) => number;
   attemptMoveTask: (taskId: string, newStatus: Task['status']) => boolean;
@@ -352,6 +352,22 @@ export const useGameStore = create<GameState>()(
         }
 
         get().updateTask(id, updates);
+      },
+
+      resetAllTasks: () => {
+        set((state) => ({
+          tasks: state.tasks.map(task => ({
+            ...task,
+            status: 'todo' as const,
+            currentHp: task.hitPoints,
+            completedAt: undefined
+          }))
+        }));
+        
+        get().addLog({
+          type: 'move',
+          message: 'Todas as quests foram resetadas para "A Fazer"'
+        });
       },
 
       rollDice: (taskCategory) => {
