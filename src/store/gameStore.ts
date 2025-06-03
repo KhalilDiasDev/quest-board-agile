@@ -92,10 +92,124 @@ const characterClasses = {
   }
 };
 
+// Tarefas pré-definidas para o repositório de saberes
+const initialTasks: Task[] = [
+  {
+    id: 'task-1',
+    name: 'Levantamento de Requisitos',
+    description: 'Definir funcionalidades e escopo do repositório de saberes',
+    armorClass: 8,
+    hitPoints: 2,
+    currentHp: 2,
+    status: 'backlog',
+    xpReward: 80,
+    createdAt: new Date()
+  },
+  {
+    id: 'task-2',
+    name: 'Modelagem do Banco de Dados',
+    description: 'Criar diagrama ER e estrutura das tabelas para armazenar conhecimentos',
+    armorClass: 12,
+    hitPoints: 3,
+    currentHp: 3,
+    status: 'backlog',
+    xpReward: 120,
+    createdAt: new Date()
+  },
+  {
+    id: 'task-3',
+    name: 'Implementar Sistema de Autenticação',
+    description: 'Desenvolver login/logout e controle de acesso de usuários',
+    armorClass: 15,
+    hitPoints: 4,
+    currentHp: 4,
+    status: 'backlog',
+    xpReward: 150,
+    createdAt: new Date()
+  },
+  {
+    id: 'task-4',
+    name: 'Criar Interface de Upload',
+    description: 'Tela para upload de documentos, vídeos e materiais de conhecimento',
+    armorClass: 10,
+    hitPoints: 2,
+    currentHp: 2,
+    status: 'backlog',
+    xpReward: 100,
+    createdAt: new Date()
+  },
+  {
+    id: 'task-5',
+    name: 'Sistema de Busca e Filtros',
+    description: 'Implementar busca textual e filtros por categoria, autor, data',
+    armorClass: 16,
+    hitPoints: 5,
+    currentHp: 5,
+    status: 'backlog',
+    xpReward: 180,
+    createdAt: new Date()
+  },
+  {
+    id: 'task-6',
+    name: 'Dashboard de Administração',
+    description: 'Painel para gestão de conteúdos, usuários e estatísticas',
+    armorClass: 13,
+    hitPoints: 3,
+    currentHp: 3,
+    status: 'backlog',
+    xpReward: 130,
+    createdAt: new Date()
+  },
+  {
+    id: 'task-7',
+    name: 'Sistema de Comentários',
+    description: 'Permitir comentários e discussões nos materiais compartilhados',
+    armorClass: 9,
+    hitPoints: 2,
+    currentHp: 2,
+    status: 'backlog',
+    xpReward: 90,
+    createdAt: new Date()
+  },
+  {
+    id: 'task-8',
+    name: 'Implementar Tags e Categorização',
+    description: 'Sistema de tags para organizar e categorizar o conhecimento',
+    armorClass: 11,
+    hitPoints: 2,
+    currentHp: 2,
+    status: 'backlog',
+    xpReward: 110,
+    createdAt: new Date()
+  },
+  {
+    id: 'task-9',
+    name: 'API RESTful',
+    description: 'Desenvolver endpoints para integração com outras aplicações',
+    armorClass: 14,
+    hitPoints: 4,
+    currentHp: 4,
+    status: 'backlog',
+    xpReward: 160,
+    createdAt: new Date()
+  },
+  {
+    id: 'task-10',
+    name: 'Testes Automatizados',
+    description: 'Criar suite de testes unitários e de integração',
+    armorClass: 17,
+    hitPoints: 3,
+    currentHp: 3,
+    status: 'backlog',
+    xpReward: 170,
+    createdAt: new Date()
+  }
+];
+
 export const useGameStore = create<GameState>()(
   persist(
     (set, get) => ({
-      tasks: [],
+      tasks: initialTasks,
       character: {
         name: 'Aventureiro',
         class: 'warrior',
