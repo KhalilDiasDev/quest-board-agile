@@ -26,17 +26,19 @@ export const DiceRoller: React.FC<DiceRollerProps> = ({
   const { diceType, character, useSpell, spellsUsed } = useGameStore();
   const [isRolling, setIsRolling] = useState(false);
   const [lastRoll, setLastRoll] = useState<number | null>(null);
-  const [canUseSpell, setCanUseSpell] = useState(character.avatar.id === 'mage' && spellsUsed < 3);
+  const [canUseSpell, setCanUseSpell] = useState(character.avatar?.id === 'mage' && spellsUsed < 3);
 
   const getModifiers = () => {
     const { avatar } = character;
+    if (!avatar) return { totalBonus: 0, modifierText: 'Base: +0' };
+    
     let totalBonus = avatar.baseBonus;
     let modifierText = `Base: +${avatar.baseBonus}`;
 
-    if (avatar.specialties.includes(taskCategory)) {
+    if (avatar.specialties?.includes(taskCategory)) {
       totalBonus += 3;
       modifierText += ', Especialidade: +3';
-    } else if (avatar.weaknesses.includes(taskCategory)) {
+    } else if (avatar.weaknesses?.includes(taskCategory)) {
       totalBonus -= 2;
       modifierText += ', Fraqueza: -2';
     }
@@ -74,6 +76,26 @@ export const DiceRoller: React.FC<DiceRollerProps> = ({
   const { modifierText } = getModifiers();
 
   if (!isOpen) return null;
+
+  // Add defensive check for avatar
+  if (!character.avatar) {
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <Card className="bg-gradient-to-br from-amber-50 to-orange-100 border-amber-300 p-8 max-w-md w-full mx-4">
+          <div className="text-center space-y-6">
+            <p className="text-amber-700">Carregando personagem...</p>
+            <Button
+              onClick={onClose}
+              variant="outline"
+              className="w-full border-amber-300 text-amber-700 hover:bg-amber-50"
+            >
+              Fechar
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
