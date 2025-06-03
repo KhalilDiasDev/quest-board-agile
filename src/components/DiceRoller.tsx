@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Dice6, Sparkles, Zap } from 'lucide-react';
@@ -23,7 +22,7 @@ export const DiceRoller: React.FC<DiceRollerProps> = ({
   isOpen,
   onClose
 }) => {
-  const { diceType, character, useSpell, spellsUsed } = useGameStore();
+  const { diceType, character, useSpell, spellsUsed, rollDice } = useGameStore();
   const [isRolling, setIsRolling] = useState(false);
   const [lastRoll, setLastRoll] = useState<number | null>(null);
   const [canUseSpell, setCanUseSpell] = useState(character.avatar?.id === 'mage' && spellsUsed < 3);
@@ -46,15 +45,14 @@ export const DiceRoller: React.FC<DiceRollerProps> = ({
     return { totalBonus, modifierText };
   };
 
-  const rollDice = async () => {
+  const handleRollDice = async () => {
     setIsRolling(true);
     
     // Simulate dice rolling animation
     await new Promise(resolve => setTimeout(resolve, 1000));
     
-    const baseRoll = Math.floor(Math.random() * diceType) + 1;
-    const { totalBonus } = getModifiers();
-    const totalRoll = baseRoll + totalBonus;
+    // Usar a mesma função rollDice do store para garantir consistência
+    const totalRoll = rollDice(taskCategory);
     
     setLastRoll(totalRoll);
     setIsRolling(false);
@@ -69,7 +67,7 @@ export const DiceRoller: React.FC<DiceRollerProps> = ({
     if (useSpell()) {
       setCanUseSpell(false);
       setLastRoll(null);
-      await rollDice();
+      await handleRollDice();
     }
   };
 
@@ -160,7 +158,7 @@ export const DiceRoller: React.FC<DiceRollerProps> = ({
             <div className="space-y-3">
               {!lastRoll && (
                 <Button
-                  onClick={rollDice}
+                  onClick={handleRollDice}
                   disabled={isRolling}
                   className="w-full bg-amber-600 hover:bg-amber-700 text-white"
                 >

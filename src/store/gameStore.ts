@@ -8,8 +8,6 @@ export interface Task {
   category: 'technical' | 'business' | 'design' | 'testing' | 'documentation';
   difficulty: 'easy' | 'medium' | 'hard';
   armorClass: number;
-  hitPoints: number;
-  currentHp: number;
   status: 'todo' | 'inprogress' | 'done' | 'finish' | 'failed';
   xpReward: number;
   createdAt: Date;
@@ -65,6 +63,7 @@ interface GameState {
   actionLog: ActionLog[];
   diceType: number;
   spellsUsed: number;
+  lastDiceResult: number | null; // Armazena o último resultado do dado
   
   // Actions
   addTask: (task: Omit<Task, 'id' | 'createdAt' | 'chances' | 'maxChances'>) => void;
@@ -74,7 +73,8 @@ interface GameState {
   resetAllTasks: () => void;
   
   rollDice: (taskCategory: Task['category']) => number;
-  attemptMoveTask: (taskId: string, newStatus: Task['status']) => boolean;
+  attemptMoveTask: (taskId: string, newStatus: Task['status'], diceResult?: number) => boolean;
+  setLastDiceResult: (result: number) => void;
   
   gainXp: (amount: number) => void;
   levelUp: () => void;
@@ -139,7 +139,7 @@ const avatars: Avatar[] = [
   }
 ];
 
-// Tarefas pré-definidas com o novo sistema de chances
+// Tarefas pré-definidas com o novo sistema (sem hitPoints)
 const initialTasks: Task[] = [
   {
     id: 'task-1',
@@ -148,8 +148,6 @@ const initialTasks: Task[] = [
     category: 'business',
     difficulty: 'easy',
     armorClass: 8,
-    hitPoints: 3,
-    currentHp: 3,
     status: 'todo',
     xpReward: 80,
     createdAt: new Date(),
@@ -163,8 +161,6 @@ const initialTasks: Task[] = [
     category: 'technical',
     difficulty: 'medium',
     armorClass: 12,
-    hitPoints: 3,
-    currentHp: 3,
     status: 'todo',
     xpReward: 120,
     createdAt: new Date(),
@@ -178,8 +174,6 @@ const initialTasks: Task[] = [
     category: 'technical',
     difficulty: 'hard',
     armorClass: 16,
-    hitPoints: 3,
-    currentHp: 3,
     status: 'todo',
     xpReward: 180,
     createdAt: new Date(),
@@ -193,8 +187,6 @@ const initialTasks: Task[] = [
     category: 'design',
     difficulty: 'medium',
     armorClass: 11,
-    hitPoints: 3,
-    currentHp: 3,
     status: 'todo',
     xpReward: 110,
     createdAt: new Date(),
@@ -208,8 +200,6 @@ const initialTasks: Task[] = [
     category: 'technical',
     difficulty: 'hard',
     armorClass: 18,
-    hitPoints: 3,
-    currentHp: 3,
     status: 'todo',
     xpReward: 200,
     createdAt: new Date(),
@@ -223,8 +213,6 @@ const initialTasks: Task[] = [
     category: 'design',
     difficulty: 'medium',
     armorClass: 13,
-    hitPoints: 3,
-    currentHp: 3,
     status: 'todo',
     xpReward: 140,
     createdAt: new Date(),
@@ -238,8 +226,6 @@ const initialTasks: Task[] = [
     category: 'technical',
     difficulty: 'easy',
     armorClass: 9,
-    hitPoints: 3,
-    currentHp: 3,
     status: 'todo',
     xpReward: 90,
     createdAt: new Date(),
@@ -253,8 +239,6 @@ const initialTasks: Task[] = [
     category: 'business',
     difficulty: 'medium',
     armorClass: 12,
-    hitPoints: 3,
-    currentHp: 3,
     status: 'todo',
     xpReward: 120,
     createdAt: new Date(),
@@ -268,8 +252,6 @@ const initialTasks: Task[] = [
     category: 'technical',
     difficulty: 'hard',
     armorClass: 15,
-    hitPoints: 3,
-    currentHp: 3,
     status: 'todo',
     xpReward: 170,
     createdAt: new Date(),
@@ -283,8 +265,6 @@ const initialTasks: Task[] = [
     category: 'testing',
     difficulty: 'hard',
     armorClass: 17,
-    hitPoints: 3,
-    currentHp: 3,
     status: 'todo',
     xpReward: 190,
     createdAt: new Date(),
@@ -299,7 +279,7 @@ export const useGameStore = create<GameState>()(
       tasks: initialTasks,
       character: {
         name: 'Aventureiro',
-        avatar: avatars[0], // This should now be properly defined
+        avatar: avatars[0],
         level: 1,
         xp: 0,
         xpToNext: 100,
@@ -311,13 +291,13 @@ export const useGameStore = create<GameState>()(
       actionLog: [],
       diceType: 20,
       spellsUsed: 0,
+      lastDiceResult: null,
 
       addTask: (taskData) => {
         const task: Task = {
           ...taskData,
           id: crypto.randomUUID(),
           createdAt: new Date(),
-          currentHp: taskData.hitPoints,
           chances: 3,
           maxChances: 3
         };
@@ -328,7 +308,7 @@ export const useGameStore = create<GameState>()(
         
         get().addLog({
           type: 'move',
-          message: `Nova quest criada: "${task.name}" (CA: ${task.armorClass}, HP: ${task.hitPoints})`
+          message: `Nova quest criada: "${task.name}" (CA: ${task.armorClass})`
         });
       },
 
@@ -384,19 +364,31 @@ export const useGameStore = create<GameState>()(
       },
 
       resetAllTasks: () => {
-        set((state) => ({
-          tasks: state.tasks.map(task => ({
+        // Reset completo do jogo
+        set({
+          tasks: initialTasks.map(task => ({
             ...task,
             status: 'todo' as const,
-            currentHp: task.hitPoints,
             completedAt: undefined,
-            chances: 3
-          }))
-        }));
+            chances: 3,
+            createdAt: new Date()
+          })),
+          character: {
+            name: 'Aventureiro',
+            avatar: avatars[0],
+            level: 1,
+            xp: 0,
+            xpToNext: 100,
+            abilities: ['Iniciante']
+          },
+          actionLog: [],
+          spellsUsed: 0,
+          lastDiceResult: null
+        });
         
         get().addLog({
           type: 'move',
-          message: 'Todas as quests foram resetadas para "Taverna"'
+          message: 'Jogo completamente resetado! Bem-vindo de volta, aventureiro!'
         });
       },
 
@@ -407,22 +399,37 @@ export const useGameStore = create<GameState>()(
 
         // Aplicar bônus por especialidade
         if (character.avatar?.specialties?.includes(taskCategory)) {
-          totalBonus += 3; // +3 para especialidades
+          totalBonus += 3;
         }
 
         // Aplicar penalidade por fraqueza
         if (character.avatar?.weaknesses?.includes(taskCategory)) {
-          totalBonus -= 2; // -2 para fraquezas
+          totalBonus -= 2;
         }
 
-        return baseRoll + totalBonus;
+        const result = baseRoll + totalBonus;
+        
+        // Armazenar o resultado para uso posterior
+        set({ lastDiceResult: result });
+        
+        return result;
       },
 
-      attemptMoveTask: (taskId, newStatus) => {
+      setLastDiceResult: (result) => {
+        set({ lastDiceResult: result });
+      },
+
+      attemptMoveTask: (taskId, newStatus, diceResult) => {
         const task = get().tasks.find(t => t.id === taskId);
         if (!task) return false;
 
-        const roll = get().rollDice(task.category);
+        // Não permitir rolagem se a task já foi completada ou falhou
+        if (task.status === 'finish' || task.status === 'failed') {
+          return false;
+        }
+
+        // Usar o resultado fornecido ou o último resultado armazenado
+        const roll = diceResult || get().lastDiceResult || get().rollDice(task.category);
         const success = roll >= task.armorClass;
         
         const { character } = get();
@@ -434,33 +441,30 @@ export const useGameStore = create<GameState>()(
         }
         
         if (success) {
-          // Sucesso - pode mover para próximo status
-          const newHp = task.currentHp - 1;
-          if (newHp <= 0) {
-            // Task concluída neste status
-            get().moveTask(taskId, newStatus);
-            get().updateTask(taskId, { currentHp: task.hitPoints }); // Reset HP para próximo status
-          } else {
-            get().updateTask(taskId, { currentHp: newHp });
-            get().addLog({
-              type: 'move',
-              message: `"${task.name}" recebeu dano! HP restante: ${newHp}/${task.hitPoints}`
-            });
-          }
+          // SUCESSO - Move para o próximo status automaticamente
+          get().moveTask(taskId, newStatus);
           
           get().addLog({
             type: 'roll',
-            message: `Rolou ${roll}, superou CA ${task.armorClass}!${bonusText}`,
+            message: `Rolou ${roll}, superou CA ${task.armorClass}! Quest avançou!${bonusText}`,
             diceRoll: roll,
             success: true
           });
         } else {
-          // Falha - reduz chances
+          // FALHA - Reduz chances (apenas na falha)
           const newChances = task.chances - 1;
+          
           if (newChances <= 0) {
-            // Sem chances restantes - task falha
+            // Sem chances restantes - task falha definitivamente
             get().moveTask(taskId, 'failed');
+            get().addLog({
+              type: 'roll',
+              message: `Rolou ${roll}, falhou contra CA ${task.armorClass}. Quest falhou!${bonusText}`,
+              diceRoll: roll,
+              success: false
+            });
           } else {
+            // Ainda tem chances
             get().updateTask(taskId, { chances: newChances });
             get().addLog({
               type: 'roll',
@@ -470,6 +474,9 @@ export const useGameStore = create<GameState>()(
             });
           }
         }
+
+        // Limpar o resultado armazenado após usar
+        set({ lastDiceResult: null });
 
         return success;
       },
@@ -535,7 +542,7 @@ export const useGameStore = create<GameState>()(
         };
         
         set((state) => ({
-          actionLog: [log, ...state.actionLog].slice(0, 50) // Keep last 50 logs
+          actionLog: [log, ...state.actionLog].slice(0, 50)
         }));
       },
 

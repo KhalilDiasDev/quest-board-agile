@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Sword, Shield, Heart, Star, Trash2, Edit, ArrowRight, Tag } from 'lucide-react';
@@ -18,6 +17,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete }) =>
   const { attemptMoveTask, character } = useGameStore();
   const [showDiceRoller, setShowDiceRoller] = useState(false);
   const [targetStatus, setTargetStatus] = useState<Task['status']>('inprogress');
+  const [showRetryMessage, setShowRetryMessage] = useState(false);
+  const [diceRollerKey, setDiceRollerKey] = useState(0); // Key para resetar o DiceRoller
 
   const getNextStatus = (currentStatus: Task['status']): Task['status'] | null => {
     const flow: Record<Task['status'], Task['status'] | null> = {
@@ -34,12 +35,30 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete }) =>
     const nextStatus = getNextStatus(task.status);
     if (nextStatus) {
       setTargetStatus(nextStatus);
+      setDiceRollerKey(prev => prev + 1); // Incrementa key para resetar DiceRoller
       setShowDiceRoller(true);
+      setShowRetryMessage(false); // Remove mensagem de retry ao tentar novamente
     }
   };
 
-  const handleDiceRoll = (result: number) => {
-    attemptMoveTask(task.id, targetStatus);
+  const handleDiceRoll = (totalRoll: number) => {
+    // O valor já vem calculado do DiceRoller, incluindo todos os modificadores
+    const success = totalRoll >= task.armorClass;
+    
+    // Se foi bem-sucedido, move para o próximo status
+    if (success) {
+      attemptMoveTask(task.id, targetStatus, totalRoll);
+      setShowRetryMessage(false);
+    } else {
+      // Se falhou, reduz uma chance e verifica se ainda há tentativas
+      attemptMoveTask(task.id, task.status, totalRoll); // Mantém no mesmo status mas reduz chance
+      
+      // Se ainda há chances restantes após a falha, mostra mensagem de retry
+      if (task.chances > 1) {
+        setShowRetryMessage(true);
+        setTimeout(() => setShowRetryMessage(false), 3000);
+      }
+    }
   };
 
   const getCardStyle = () => {
@@ -224,6 +243,20 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete }) =>
               </div>
             )}
 
+            {/* Retry Message */}
+            {showRetryMessage && (
+              <motion.div
+                initial={{ opacity: 0, y: -10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                className="bg-yellow-100 border border-yellow-300 rounded-lg p-2 text-center"
+              >
+                <p className="text-xs text-yellow-800 font-medium">
+                  ⚔️ Ataque falhou! Você ainda tem {task.chances - 1} tentativa(s) restante(s)
+                </p>
+              </motion.div>
+            )}
+
             {/* Status Badge and Action */}
             <div className="flex items-center justify-between">
               <Badge variant="outline" className="text-xs">
@@ -252,6 +285,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onEdit, onDelete }) =>
       </motion.div>
 
       <DiceRoller
+        key={diceRollerKey} // Key única força recriação do componente
         isOpen={showDiceRoller}
         onClose={() => setShowDiceRoller(false)}
         onRoll={handleDiceRoll}
